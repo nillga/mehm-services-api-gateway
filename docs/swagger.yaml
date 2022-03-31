@@ -121,6 +121,7 @@ paths:
       summary: Read a specified comment
       tags:
       - comments
+  /comments/new:
     post:
       consumes:
       - application/json

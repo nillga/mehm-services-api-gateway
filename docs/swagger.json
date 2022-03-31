@@ -78,7 +78,9 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/comments/new": {
             "post": {
                 "security": [
                     {

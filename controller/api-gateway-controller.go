@@ -280,7 +280,7 @@ func (c *controller) LikeMehm(w http.ResponseWriter, r *http.Request) {
 // @Failure      401  {object}  errors.ProceduralError
 // @Failure      500  {object}  errors.ProceduralError
 // @Failure      502  {object}  errors.ProceduralError
-// @Router       /comments/get/{id} [post]
+// @Router       /comments/new [post]
 func (c *controller) PostComment(w http.ResponseWriter, r *http.Request) {
 	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
 	if err != nil {

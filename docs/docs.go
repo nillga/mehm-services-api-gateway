@@ -85,7 +85,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/comments/new": {
             "post": {
                 "security": [
                     {
