@@ -53,13 +53,14 @@ func NewApiGatewayController() ApiGatewayController {
 }
 
 // GetMehms godoc
-// @Summary      Returns a page of mehms
-// @Description  Pagination can be handled via query params
+// @Security bearerToken
+// @Summary      Read a page of mehms
+// @Description  Pagination can be handled via query parameters
 // @Tags         mehms
 // @Accept       json
 // @Produce      json
-// @Param        skip   query      int  false  "How many mehms will be skipped"
-// @Param        take   query      int  false  "How many mehms will be taken"
+// @Param        skip   query      int  false  "states the number of skipped Mehms" minimum(0) default(0)
+// @Param        take   query      int  false  "states the count of grabbed Mehms" minimum(1) maximum(30) default(30)
 // @Success      200  {object}  map[string]dto.MehmDTO{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -94,12 +95,13 @@ func (c *controller) GetAllMehms(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSpecificMehm godoc
-// @Summary      Returns a specified mehm
-// @Description  optionally showing info for privileged user
+// @Summary      View a specified mehm
+// @Security bearerToken
+// @Description  This will return the requested Mehm including the information whether you have liked it already.
 // @Tags         mehms
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "The ID of the requested mehm"
+// @Param        id   path      int  true  "The ID of the requested mehm" minimum(1)
 // @Success      200  {object}  dto.MehmDTO{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -142,12 +144,13 @@ func (c *controller) GetSpecificMehm(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetComment godoc
-// @Summary      Used to show a specified comment
-// @Description  optionally showing info for privileged user
+// @Summary      Read a specified comment
+// @Security bearerToken
+// @Description  By specifying the comment id, you can read that comment
 // @Tags         comments
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "The ID of the requested mehm"
+// @Param        id   path      int  true  "The ID of the requested comment" minimum(1)
 // @Success      200  {object}  dto.CommentDTO{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -189,8 +192,9 @@ func (c *controller) GetComment(w http.ResponseWriter, r *http.Request) {
 }
 
 // ResolveProfile godoc
-// @Summary      Receive Info about ones self
-// @Description  These informations contain username, email address and id
+// @Summary      Profile information
+// @Security bearerToken
+// @Description  This call will respond with your id, username and email.
 // @Tags         user
 // @Accept       json
 // @Produce      json
@@ -213,12 +217,13 @@ func (c *controller) ResolveProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // LikeMehm godoc
-// @Summary      Used to like a specified mehm
-// @Description  optionally showing info for privileged user
+// @Summary      Like a specified mehm
+// @Security bearerToken
+// @Description  This is a like-toggle: if the Mehm had been liked already, the like will be removed.
 // @Tags         mehms
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "The ID of the requested mehm"
+// @Param        id   path      int  true  "The ID of the requested mehm" minimum(1)
 // @Success      200  {object}  interface{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -262,13 +267,14 @@ func (c *controller) LikeMehm(w http.ResponseWriter, r *http.Request) {
 }
 
 // PostComment godoc
-// @Summary      Used to add a new comment
-// @Description  optionally showing info for privileged user
+// @Summary      Post a comment
+// @Security bearerToken
+// @Description  With this API-Call you are able to post a comment related to any existing Mehm.
 // @Tags         comments
 // @Accept       json
 // @Produce      json
-// @Param        comment   query      string  true  "The comment"
-// @Param        mehmId   query      int  true  "The mehm"
+// @Param        comment   query      string  true  "The comment" minlength(1) maxlength(256)
+// @Param        mehmId   query      int  true  "The mehm" minimum(1)
 // @Success      200  {object}  interface{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -309,8 +315,9 @@ func (c *controller) PostComment(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditComment godoc
-// @Summary      Used to edit an existing comment
-// @Description  optionally showing info for privileged user
+// @Summary      Edit an existing comment
+// @Security bearerToken
+// @Description  Here you can edit previously posted comments. An Admin will be able to edit other people's comments too.
 // @Tags         comments
 // @Accept       json
 // @Produce      json
@@ -376,14 +383,15 @@ func (c *controller) EditComment(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditMehm godoc
-// @Summary      Used to delete a specified mehm
-// @Description  optionally showing info for privileged user
+// @Summary      Edit a Mehm's shown information
+// @Security bearerToken
+// @Description  This will be only possible for own Mehms, unless you are privileged
 // @Tags         mehms
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "The ID of the requested mehm"
-// @Param		 description body string true "The new mehm description"
-// @Param        title body string true "The new mehm title"
+// @Param        id   path      int  true  "The ID of the requested mehm" minimum(1)
+// @Param		 description body string true "The new mehm description" minlength(1) maxlength(128)
+// @Param        title body string true "The new mehm title" minlength(1) maxlength(32)
 // @Success      200  {object}  interface{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -452,8 +460,9 @@ func (c *controller) EditMehm(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete godoc
-// @Summary      Deletes a targeted User
-// @Description  Self-delete; admins can delete anybody
+// @Summary      Delete a user
+// @Security bearerToken
+// @Description  Regular user can only delete theirselves, admin users can delete every user
 // @Tags         user
 // @Accept       json
 // @Produce      json
@@ -501,12 +510,13 @@ func (c *controller) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // RemoveMehm godoc
-// @Summary      Used to delete a specified mehm
-// @Description  optionally showing info for privileged user
+// @Summary      Delete a Mehm
+// @Security bearerToken
+// @Description  Regular users can only delete their own Mehms, privileged users can delete whatever they wish
 // @Tags         mehms
 // @Accept       json
 // @Produce      json
-// @Param        id   path      int  true  "The ID of the requested mehm"
+// @Param        id   path      int  true  "The ID of the requested mehm" minimum(1)
 // @Success      200  {object}  interface{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError

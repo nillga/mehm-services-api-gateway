@@ -28,15 +28,15 @@ type CommentDTO struct {
 }
 
 type CommentInput struct {
-	UserId  int64  `json:"userId"`
-	Id      int64  `json:"id"`
-	Comment string `json:"comment"`
-	Admin   bool   `json:"isAdmin"`
+	UserId  int64  `json:"userId" minimum:"1"`
+	Id      int64  `json:"id" minimum:"1"`
+	Comment string `json:"comment" minlength:"1" maxlength:"256"`
+	Admin   bool   `json:"isAdmin" default:"false"`
 }
 
 type MehmInput struct {
-	UserId      int64  `json:"userId"`
-	Description string `json:"description"`
-	Title       string `json:"title"`
-	Admin       bool   `json:"isAdmin"`
+	UserId      int64  `json:"userId" minimum:"1"`
+	Description string `json:"description" minlength:"1" maxlength:"128"`
+	Title       string `json:"title" minlength:"1" maxlength:"32"`
+	Admin       bool   `json:"isAdmin" default:"false"`
 }

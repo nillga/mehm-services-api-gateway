@@ -27,7 +27,12 @@ const docTemplate = `{
     "paths": {
         "/comments/get/{id}": {
             "get": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "By specifying the comment id, you can read that comment",
                 "consumes": [
                     "application/json"
                 ],
@@ -37,11 +42,12 @@ const docTemplate = `{
                 "tags": [
                     "comments"
                 ],
-                "summary": "Used to show a specified comment",
+                "summary": "Read a specified comment",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "The ID of the requested mehm",
+                        "description": "The ID of the requested comment",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -81,7 +87,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "With this API-Call you are able to post a comment related to any existing Mehm.",
                 "consumes": [
                     "application/json"
                 ],
@@ -91,9 +102,11 @@ const docTemplate = `{
                 "tags": [
                     "comments"
                 ],
-                "summary": "Used to add a new comment",
+                "summary": "Post a comment",
                 "parameters": [
                     {
+                        "maxLength": 256,
+                        "minLength": 1,
                         "type": "string",
                         "description": "The comment",
                         "name": "comment",
@@ -101,6 +114,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "The mehm",
                         "name": "mehmId",
@@ -144,7 +158,12 @@ const docTemplate = `{
         },
         "/comments/update": {
             "post": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "Here you can edit previously posted comments. An Admin will be able to edit other people's comments too.",
                 "consumes": [
                     "application/json"
                 ],
@@ -154,7 +173,7 @@ const docTemplate = `{
                 "tags": [
                     "comments"
                 ],
-                "summary": "Used to edit an existing comment",
+                "summary": "Edit an existing comment",
                 "parameters": [
                     {
                         "description": "Input data",
@@ -214,7 +233,12 @@ const docTemplate = `{
         },
         "/mehms": {
             "get": {
-                "description": "Pagination can be handled via query params",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "Pagination can be handled via query parameters",
                 "consumes": [
                     "application/json"
                 ],
@@ -224,17 +248,22 @@ const docTemplate = `{
                 "tags": [
                     "mehms"
                 ],
-                "summary": "Returns a page of mehms",
+                "summary": "Read a page of mehms",
                 "parameters": [
                     {
+                        "minimum": 0,
                         "type": "integer",
-                        "description": "How many mehms will be skipped",
+                        "default": 0,
+                        "description": "states the number of skipped Mehms",
                         "name": "skip",
                         "in": "query"
                     },
                     {
+                        "maximum": 30,
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "How many mehms will be taken",
+                        "default": 30,
+                        "description": "states the count of grabbed Mehms",
                         "name": "take",
                         "in": "query"
                     }
@@ -272,7 +301,12 @@ const docTemplate = `{
         },
         "/mehms/{id}": {
             "get": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This will return the requested Mehm including the information whether you have liked it already.",
                 "consumes": [
                     "application/json"
                 ],
@@ -282,9 +316,10 @@ const docTemplate = `{
                 "tags": [
                     "mehms"
                 ],
-                "summary": "Returns a specified mehm",
+                "summary": "View a specified mehm",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "The ID of the requested mehm",
                         "name": "id",
@@ -328,7 +363,12 @@ const docTemplate = `{
         },
         "/mehms/{id}/like": {
             "post": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This is a like-toggle: if the Mehm had been liked already, the like will be removed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -338,9 +378,10 @@ const docTemplate = `{
                 "tags": [
                     "mehms"
                 ],
-                "summary": "Used to like a specified mehm",
+                "summary": "Like a specified mehm",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "The ID of the requested mehm",
                         "name": "id",
@@ -384,7 +425,12 @@ const docTemplate = `{
         },
         "/mehms/{id}/remove": {
             "post": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "Regular users can only delete their own Mehms, privileged users can delete whatever they wish",
                 "consumes": [
                     "application/json"
                 ],
@@ -394,9 +440,10 @@ const docTemplate = `{
                 "tags": [
                     "mehms"
                 ],
-                "summary": "Used to delete a specified mehm",
+                "summary": "Delete a Mehm",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "The ID of the requested mehm",
                         "name": "id",
@@ -440,7 +487,12 @@ const docTemplate = `{
         },
         "/mehms/{id}/update": {
             "post": {
-                "description": "optionally showing info for privileged user",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This will be only possible for own Mehms, unless you are privileged",
                 "consumes": [
                     "application/json"
                 ],
@@ -450,9 +502,10 @@ const docTemplate = `{
                 "tags": [
                     "mehms"
                 ],
-                "summary": "Used to delete a specified mehm",
+                "summary": "Edit a Mehm's shown information",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "The ID of the requested mehm",
                         "name": "id",
@@ -460,6 +513,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "maxLength": 128,
+                        "minLength": 1,
                         "description": "The new mehm description",
                         "name": "description",
                         "in": "body",
@@ -469,6 +524,8 @@ const docTemplate = `{
                         }
                     },
                     {
+                        "maxLength": 32,
+                        "minLength": 1,
                         "description": "The new mehm title",
                         "name": "title",
                         "in": "body",
@@ -526,7 +583,12 @@ const docTemplate = `{
         },
         "/user": {
             "get": {
-                "description": "These informations contain username, email address and id",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This call will respond with your id, username and email.",
                 "consumes": [
                     "application/json"
                 ],
@@ -536,7 +598,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Receive Info about ones self",
+                "summary": "Profile information",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -561,7 +623,12 @@ const docTemplate = `{
         },
         "/user/delete": {
             "post": {
-                "description": "Self-delete; admins can delete anybody",
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "Regular user can only delete theirselves, admin users can delete every user",
                 "consumes": [
                     "application/json"
                 ],
@@ -571,7 +638,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Deletes a targeted User",
+                "summary": "Delete a user",
                 "parameters": [
                     {
                         "description": "Input data",
@@ -652,13 +719,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "isAdmin": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false
                 },
                 "userId": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -729,6 +799,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "bearerToken": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

@@ -31,6 +31,10 @@ var apiRouter = router.NewApiGatewayRouter()
 // @host      localhost:420/api
 // @BasePath  /
 
+// @securityDefinitions.apikey bearerToken
+// @in header
+// @name Authorization
+
 func main() {
 	cr := chi.NewRouter()
 
