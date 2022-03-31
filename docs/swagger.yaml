@@ -1,4 +1,69 @@
 basePath: /
+definitions:
+  dto.CommentDTO:
+    properties:
+      author:
+        type: string
+      dateTime:
+        type: string
+      id:
+        type: string
+    type: object
+  dto.CommentInput:
+    properties:
+      comment:
+        type: string
+      id:
+        type: integer
+      isAdmin:
+        type: boolean
+      userId:
+        type: integer
+    type: object
+  dto.MehmDTO:
+    properties:
+      authorName:
+        type: string
+      createdDate:
+        type: string
+      description:
+        type: string
+      genre:
+        type: integer
+      id:
+        type: integer
+      imageSource:
+        type: string
+      likes:
+        type: integer
+      title:
+        type: string
+    type: object
+  entity.DeleteUserInput:
+    properties:
+      id:
+        type: string
+    type: object
+  entity.User:
+    properties:
+      _id:
+        type: string
+      admin:
+        type: boolean
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        items:
+          type: integer
+        type: array
+    type: object
+  errors.ProceduralError:
+    properties:
+      message:
+        type: string
+    type: object
 host: localhost:420/api
 info:
   contact:
@@ -12,5 +77,404 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Swagger Example API
   version: "1.0"
-paths: {}
+paths:
+  /comments/get/{id}:
+    get:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The ID of the requested mehm
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommentDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to show a specified comment
+      tags:
+      - comments
+    post:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The comment
+        in: query
+        name: comment
+        required: true
+        type: string
+      - description: The mehm
+        in: query
+        name: mehmId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to add a new comment
+      tags:
+      - comments
+  /comments/update:
+    post:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: Input data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CommentInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to edit an existing comment
+      tags:
+      - comments
+  /mehms:
+    get:
+      consumes:
+      - application/json
+      description: Pagination can be handled via query params
+      parameters:
+      - description: How many mehms will be skipped
+        in: query
+        name: skip
+        type: integer
+      - description: How many mehms will be taken
+        in: query
+        name: take
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/dto.MehmDTO'
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Returns a page of mehms
+      tags:
+      - mehms
+  /mehms/{id}:
+    get:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The ID of the requested mehm
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MehmDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Returns a specified mehm
+      tags:
+      - mehms
+  /mehms/{id}/like:
+    post:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The ID of the requested mehm
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to like a specified mehm
+      tags:
+      - mehms
+  /mehms/{id}/remove:
+    post:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The ID of the requested mehm
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to delete a specified mehm
+      tags:
+      - mehms
+  /mehms/{id}/update:
+    post:
+      consumes:
+      - application/json
+      description: optionally showing info for privileged user
+      parameters:
+      - description: The ID of the requested mehm
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: The new mehm description
+        in: body
+        name: description
+        required: true
+        schema:
+          type: string
+      - description: The new mehm title
+        in: body
+        name: title
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Used to delete a specified mehm
+      tags:
+      - mehms
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: These informations contain username, email address and id
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Receive Info about ones self
+      tags:
+      - user
+  /user/delete:
+    post:
+      consumes:
+      - application/json
+      description: Self-delete; admins can delete anybody
+      parameters:
+      - description: Input data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/entity.DeleteUserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      summary: Deletes a targeted User
+      tags:
+      - user
 swagger: "2.0"

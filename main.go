@@ -59,5 +59,5 @@ func main() {
 	go func() {
 		log.Fatalln(http.ListenAndServe(os.Getenv("SWAG"), c.Handler(cr)))
 	}()
-	apiRouter.SERVE("PORT")
+	apiRouter.SERVE(os.Getenv("PORT"))
 }

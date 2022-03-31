@@ -45,8 +45,8 @@ type controller struct {
 }
 
 var apiGatewayService = service.NewApiGatewayService()
-var users = os.Getenv("USERS")
-var mehms = os.Getenv("MEHMS")
+var users = os.Getenv("USERS_HOST")
+var mehms = os.Getenv("MEHMS_HOST")
 
 func NewApiGatewayController() ApiGatewayController {
 	return &controller{}
