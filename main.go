@@ -47,10 +47,13 @@ func main() {
 	apiRouter.POST("/api/mehms/{id}/like", apiController.LikeMehm)
 	apiRouter.POST("/api/mehms/{id}/remove", apiController.DeleteMehm)
 	apiRouter.GET("/api/user", apiController.ResolveProfile)
+	apiRouter.GET("/api/user/all", apiController.AllUsers)
+	apiRouter.POST("/api/user/elevate", apiController.ToggleElevation)
 	apiRouter.POST("/api/user/delete", apiController.DeleteUser)
 	apiRouter.GET("/api/comments/{id}", apiController.GetComment)
 	apiRouter.POST("/api/comments/new", apiController.PostComment)
 	apiRouter.POST("/api/comments/update", apiController.EditComment)
+	apiRouter.POST("/api/comments/remove", apiController.DeleteComment)
 	apiRouter.POST("/api/mehms/{id}/update", apiController.EditMehm)
 
 	c := cors.New(cors.Options{

@@ -107,19 +107,73 @@ const docTemplate = `{
                 "summary": "Post a comment",
                 "parameters": [
                     {
-                        "maxLength": 256,
-                        "minLength": 1,
-                        "type": "string",
-                        "description": "The comment",
-                        "name": "comment",
-                        "in": "query",
-                        "required": true
+                        "description": "Input data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.Comment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/remove": {
+            "post": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "Regular users can only delete their own comments, privileged users can delete whatever they wish",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Delete a Comment",
+                "parameters": [
                     {
                         "minimum": 1,
                         "type": "integer",
-                        "description": "The mehm",
-                        "name": "mehmId",
+                        "description": "The ID of the requested mehm",
+                        "name": "commentId",
                         "in": "query",
                         "required": true
                     }
@@ -267,6 +321,37 @@ const docTemplate = `{
                         "default": 30,
                         "description": "states the count of grabbed Mehms",
                         "name": "take",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 32,
+                        "minLength": 0,
+                        "type": "string",
+                        "default": "",
+                        "description": "search a Mehm by name",
+                        "name": "textSearch",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "PROGRAMMING",
+                            "DHBW",
+                            "OTHER",
+                            ""
+                        ],
+                        "type": "string",
+                        "description": "filter for a genre",
+                        "name": "genre",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "createdDate",
+                            "likes"
+                        ],
+                        "type": "string",
+                        "description": "sort the results",
+                        "name": "sort",
                         "in": "query"
                     }
                 ],
@@ -623,6 +708,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/all": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This is only usable for privileged users and prints all users' id, name and admin status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Show all users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    }
+                }
+            }
+        },
         "/user/delete": {
             "post": {
                 "security": [
@@ -697,9 +825,73 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/elevate": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "description": "This is only usable for privileged users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Toggle a users' admin status",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "The ID of the user",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ProceduralError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "dto.Comment": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "mehmId": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.CommentDTO": {
             "type": "object",
             "properties": {
@@ -717,20 +909,12 @@ const docTemplate = `{
         "dto.CommentInput": {
             "type": "object",
             "properties": {
-                "comment": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer",
                     "minimum": 1
                 },
-                "isAdmin": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "userId": {
-                    "type": "integer",
-                    "minimum": 1
+                "text": {
+                    "type": "string"
                 }
             }
         },

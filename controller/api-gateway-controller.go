@@ -33,6 +33,9 @@ type UserController interface {
 type PrivilegedController interface {
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 	DeleteMehm(w http.ResponseWriter, r *http.Request)
+	AllUsers(w http.ResponseWriter, r *http.Request)
+	ToggleElevation(w http.ResponseWriter, r *http.Request)
+	DeleteComment(w http.ResponseWriter, r *http.Request)
 }
 
 type ApiGatewayController interface {
@@ -61,6 +64,9 @@ func NewApiGatewayController() ApiGatewayController {
 // @Produce      json
 // @Param        skip   query      int  false  "states the number of skipped Mehms" minimum(0) default(0)
 // @Param        take   query      int  false  "states the count of grabbed Mehms" minimum(1) maximum(30) default(30)
+// @Param        textSearch   query      string  false  "search a Mehm by name" minlength(0) maxlength(32) default()
+// @Param        genre   query      string  false  "filter for a genre" Enums(PROGRAMMING, DHBW, OTHER, )
+// @Param        sort   query      string  false  "sort the results" Enums(createdDate, likes)
 // @Success      200  {object}  map[string]dto.MehmDTO{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -74,6 +80,11 @@ func (c *controller) GetAllMehms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if r.URL.Query().Get("genre") != "" && r.URL.Query().Get("genre") != "PROGRAMMING" && r.URL.Query().Get("genre") != "DHBW" && r.URL.Query().Get("genre") != "OTHER" {
+		utils.BadRequest(w, fmt.Errorf("invalid genre %s", r.URL.Query().Get("genre")))
+		return
+	}
+
 	pr, err := http.NewRequest(r.Method, mehms+"/mehms?"+r.URL.Query().Encode(), r.Body)
 	if err != nil {
 		utils.InternalServerError(w, err)
@@ -216,6 +227,95 @@ func (c *controller) ResolveProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
+// AllUsers godoc
+// @Summary      Show all users
+// @Security bearerToken
+// @Description  This is only usable for privileged users and prints all users' id, name and admin status
+// @Tags         user
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  []entity.User{}
+// @Failure      401  {object}  errors.ProceduralError
+// @Failure      500  {object}  errors.ProceduralError
+// @Router       /user/all [get]
+func (c *controller) AllUsers(w http.ResponseWriter, r *http.Request) {
+	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
+	if err != nil {
+		utils.Unauthorized(w, err)
+		return
+	}
+	if !user.Admin {
+		utils.Forbidden(w, fmt.Errorf("admin-only"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	pr, err := http.NewRequest(r.Method, users+"/all", r.Body)
+	if err != nil {
+		utils.InternalServerError(w, err)
+		return
+	}
+	res, err := (&http.Client{}).Do(pr)
+	if err != nil {
+		utils.BadGateway(w, err)
+		return
+	}
+	if res.StatusCode != http.StatusOK {
+		utils.WrongStatus(w, res)
+		return
+	}
+
+	if _, err = io.Copy(w, res.Body); err != nil {
+		utils.InternalServerError(w, err)
+	}
+}
+
+// ToggleElevation godoc
+// @Summary      Toggle a users' admin status
+// @Security bearerToken
+// @Description  This is only usable for privileged users
+// @Tags         user
+// @Accept       json
+// @Produce      json
+// @Param        id   query      int  true  "The ID of the user" minimum(1)
+// @Success      200  {object}  []entity.User{}
+// @Failure      401  {object}  errors.ProceduralError
+// @Failure      500  {object}  errors.ProceduralError
+// @Router       /user/elevate [get]
+func (c *controller) ToggleElevation(w http.ResponseWriter, r *http.Request) {
+	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
+	if err != nil {
+		utils.Unauthorized(w, err)
+		return
+	}
+	if !user.Admin {
+		utils.Forbidden(w, fmt.Errorf("admin-only"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if id, err := strconv.Atoi(r.URL.Query().Get("id")); err != nil || id < 1 {
+		utils.UnprocessableEntity(w, fmt.Errorf("%s is not a valid ID", r.URL.Query().Get("id")))
+		return
+	}
+
+	pr, err := http.NewRequest(r.Method, users+"/elevate?id="+r.URL.Query().Get("id"), r.Body)
+	if err != nil {
+		utils.InternalServerError(w, err)
+		return
+	}
+	res, err := (&http.Client{}).Do(pr)
+	if err != nil {
+		utils.BadGateway(w, err)
+		return
+	}
+	if res.StatusCode != http.StatusOK {
+		utils.WrongStatus(w, res)
+	}
+}
+
 // LikeMehm godoc
 // @Summary      Like a specified mehm
 // @Security bearerToken
@@ -273,8 +373,7 @@ func (c *controller) LikeMehm(w http.ResponseWriter, r *http.Request) {
 // @Tags         comments
 // @Accept       json
 // @Produce      json
-// @Param        comment   query      string  true  "The comment" minlength(1) maxlength(256)
-// @Param        mehmId   query      int  true  "The mehm" minimum(1)
+// @Param        input   body      dto.Comment  true  "Input data"
 // @Success      200  {object}  interface{}
 // @Failure      400  {object}  errors.ProceduralError
 // @Failure      401  {object}  errors.ProceduralError
@@ -282,23 +381,40 @@ func (c *controller) LikeMehm(w http.ResponseWriter, r *http.Request) {
 // @Failure      502  {object}  errors.ProceduralError
 // @Router       /comments/new [post]
 func (c *controller) PostComment(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
 	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
 	if err != nil {
 		utils.Unauthorized(w, err)
 		return
 	}
 
-	params := r.URL.Query()
-	if !params.Has("comment") || !params.Has("mehmId") {
-		utils.BadRequest(w, fmt.Errorf("request query parameters must be comment AND mehmId"))
+	var comment dto.Comment
+	if err = json.NewDecoder(r.Body).Decode(&comment); err != nil {
+		utils.BadRequest(w, err)
+		return
+	}
+	if comment.MehmId < 1 {
+		utils.NotFound(w, fmt.Errorf("index %d does not exist", comment.MehmId))
+		return
+	}
+	if comment.Comment == "" || len(comment.Comment) > 256 {
+		utils.UnprocessableEntity(w, fmt.Errorf("comment must be 1-256 signs"))
 		return
 	}
 
-	pr, err := http.NewRequest(r.Method, mehms+"/comments/new?"+r.URL.Query().Encode()+"&userId="+user.Id, r.Body)
+	body := bytes.NewBuffer([]byte{})
+
+	if err = json.NewEncoder(body).Encode(comment); err != nil {
+		utils.InternalServerError(w, fmt.Errorf("failed repeating request"))
+		return
+	}
+
+	pr, err := http.NewRequest(r.Method, mehms+"/comments/new?userId="+user.Id, body)
 	if err != nil {
 		utils.InternalServerError(w, err)
 		return
 	}
+	pr.Header.Add("Content-Type", "application/json")
 	res, err := (&http.Client{}).Do(pr)
 	if err != nil {
 		utils.BadGateway(w, err)
@@ -337,17 +453,13 @@ func (c *controller) EditComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !user.Admin {
-		utils.Forbidden(w, fmt.Errorf("not authorized"))
-		return
-	}
-
 	var input dto.CommentInput
 
 	if err = json.NewDecoder(r.Body).Decode(&input); err != nil {
 		utils.UnprocessableEntity(w, fmt.Errorf("format problems"))
 		return
 	}
+
 	admin := strconv.FormatBool(user.Admin)
 
 	body := bytes.NewBuffer([]byte{})
@@ -357,11 +469,12 @@ func (c *controller) EditComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pr, err := http.NewRequest(r.Method, mehms+"/comments/update?user="+user.Id+"&isAdmin="+admin, body)
+	pr, err := http.NewRequest(r.Method, mehms+"/comments/update?userId="+user.Id+"&isAdmin="+admin, body)
 	if err != nil {
 		utils.InternalServerError(w, err)
 		return
 	}
+	pr.Header.Add("Content-Type", "application/json")
 	res, err := (&http.Client{}).Do(pr)
 	if err != nil {
 		utils.BadGateway(w, err)
@@ -396,31 +509,28 @@ func (c *controller) EditComment(w http.ResponseWriter, r *http.Request) {
 // @Failure      502  {object}  errors.ProceduralError
 // @Router       /mehms/{id}/update [post]
 func (c *controller) EditMehm(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		utils.BadRequest(w, fmt.Errorf("mehm specification went wrong"))
 		return
 	}
-
 	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
 	if err != nil {
 		utils.Unauthorized(w, err)
 		return
 	}
-
 	if !user.Admin {
 		utils.Forbidden(w, fmt.Errorf("not authorized"))
 		return
 	}
-
 	var input dto.MehmInput
 
 	if err = json.NewDecoder(r.Body).Decode(&input); err != nil {
 		utils.UnprocessableEntity(w, fmt.Errorf("format problems"))
 		return
 	}
-
 	admin := strconv.FormatBool(user.Admin)
 
 	body := bytes.NewBuffer([]byte{})
@@ -429,12 +539,12 @@ func (c *controller) EditMehm(w http.ResponseWriter, r *http.Request) {
 		utils.InternalServerError(w, fmt.Errorf("failed repeating request"))
 		return
 	}
-
-	pr, err := http.NewRequest(r.Method, mehms+"/"+id+"/update?user="+user.Id+"&isAdmin="+admin, body)
+	pr, err := http.NewRequest(r.Method, mehms+"/mehms/"+id+"/update?userId="+user.Id+"&isAdmin="+admin, body)
 	if err != nil {
 		utils.InternalServerError(w, err)
 		return
 	}
+	pr.Header.Add("Content-Type", "application/json")
 	res, err := (&http.Client{}).Do(pr)
 	if err != nil {
 		utils.BadGateway(w, err)
@@ -444,7 +554,6 @@ func (c *controller) EditMehm(w http.ResponseWriter, r *http.Request) {
 		utils.WrongStatus(w, res)
 		return
 	}
-
 	if _, err = io.Copy(w, res.Body); err != nil {
 		utils.InternalServerError(w, err)
 	}
@@ -535,12 +644,61 @@ func (c *controller) DeleteMehm(w http.ResponseWriter, r *http.Request) {
 		adminString = "true"
 	}
 
-	pr, err := http.NewRequest("POST", mehms+"/mehms/"+id+"/remove?userId="+user.Id+"&admin="+adminString, r.Body)
+	pr, err := http.NewRequest("POST", mehms+"/mehms/"+id+"/remove?userId="+user.Id+"&isAdmin="+adminString, r.Body)
 	if err != nil {
 		utils.InternalServerError(w, err)
 		return
 	}
 	pr.Header.Set("Content-Type", "application/json")
+	res, err := (&http.Client{}).Do(pr)
+	if err != nil {
+		utils.BadGateway(w, err)
+		return
+	}
+	if res.StatusCode != http.StatusOK {
+		utils.WrongStatus(w, res)
+		return
+	}
+
+	if _, err = io.Copy(w, res.Body); err != nil {
+		utils.InternalServerError(w, err)
+	}
+}
+
+// RemoveComment godoc
+// @Summary      Delete a Comment
+// @Security bearerToken
+// @Description  Regular users can only delete their own comments, privileged users can delete whatever they wish
+// @Tags         comments
+// @Accept       json
+// @Produce      json
+// @Param        commentId   query      int  true  "The ID of the requested mehm" minimum(1)
+// @Success      200  {object}  interface{}
+// @Failure      400  {object}  errors.ProceduralError
+// @Failure      401  {object}  errors.ProceduralError
+// @Failure      500  {object}  errors.ProceduralError
+// @Failure      502  {object}  errors.ProceduralError
+// @Router       /comments/remove [post]
+func (c *controller) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	user, err := apiGatewayService.Authenticate(r.Header.Get("Authorization"))
+	if err != nil {
+		utils.Unauthorized(w, err)
+		return
+	}
+
+	if id, err := strconv.Atoi(r.URL.Query().Get("commentId")); err != nil || id < 1 {
+		utils.BadRequest(w, fmt.Errorf("invalid comment ID %s", r.URL.Query().Get("commentId")))
+		return
+	}
+
+	admin := strconv.FormatBool(user.Admin)
+
+	pr, err := http.NewRequest(r.Method, mehms+"/comments/remove?commentId="+r.URL.Query().Get("commentId")+"&userId="+user.Id+"&isAdmin="+admin, r.Body)
+	if err != nil {
+		utils.InternalServerError(w, err)
+		return
+	}
+	pr.Header.Add("Content-Type", "application/json")
 	res, err := (&http.Client{}).Do(pr)
 	if err != nil {
 		utils.BadGateway(w, err)

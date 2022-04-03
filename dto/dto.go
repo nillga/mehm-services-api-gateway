@@ -29,6 +29,11 @@ type CommentDTO struct {
 
 type CommentInput struct {
 	Id      int64  `json:"id" minimum:"1"`
+	Comment string `json:"text" minlength:"1" maxlength:"256"`
+}
+
+type Comment struct {
+	MehmId  int64  `json:"mehmId" min:"1"`
 	Comment string `json:"comment" minlength:"1" maxlength:"256"`
 }
 

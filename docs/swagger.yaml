@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  dto.Comment:
+    properties:
+      comment:
+        type: string
+      mehmId:
+        type: integer
+    type: object
   dto.CommentDTO:
     properties:
       author:
@@ -11,17 +18,11 @@ definitions:
     type: object
   dto.CommentInput:
     properties:
-      comment:
-        type: string
       id:
         minimum: 1
         type: integer
-      isAdmin:
-        default: false
-        type: boolean
-      userId:
-        minimum: 1
-        type: integer
+      text:
+        type: string
     type: object
   dto.MehmDTO:
     properties:
@@ -128,17 +129,51 @@ paths:
       description: With this API-Call you are able to post a comment related to any
         existing Mehm.
       parameters:
-      - description: The comment
-        in: query
-        maxLength: 256
-        minLength: 1
-        name: comment
+      - description: Input data
+        in: body
+        name: input
         required: true
-        type: string
-      - description: The mehm
+        schema:
+          $ref: '#/definitions/dto.Comment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      security:
+      - bearerToken: []
+      summary: Post a comment
+      tags:
+      - comments
+  /comments/remove:
+    post:
+      consumes:
+      - application/json
+      description: Regular users can only delete their own comments, privileged users
+        can delete whatever they wish
+      parameters:
+      - description: The ID of the requested mehm
         in: query
         minimum: 1
-        name: mehmId
+        name: commentId
         required: true
         type: integer
       produces:
@@ -166,7 +201,7 @@ paths:
             $ref: '#/definitions/errors.ProceduralError'
       security:
       - bearerToken: []
-      summary: Post a comment
+      summary: Delete a Comment
       tags:
       - comments
   /comments/update:
@@ -237,6 +272,29 @@ paths:
         minimum: 1
         name: take
         type: integer
+      - default: ""
+        description: search a Mehm by name
+        in: query
+        maxLength: 32
+        minLength: 0
+        name: textSearch
+        type: string
+      - description: filter for a genre
+        enum:
+        - PROGRAMMING
+        - DHBW
+        - OTHER
+        - ""
+        in: query
+        name: genre
+        type: string
+      - description: sort the results
+        enum:
+        - createdDate
+        - likes
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -475,6 +533,34 @@ paths:
       summary: Profile information
       tags:
       - user
+  /user/all:
+    get:
+      consumes:
+      - application/json
+      description: This is only usable for privileged users and prints all users'
+        id, name and admin status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.User'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      security:
+      - bearerToken: []
+      summary: Show all users
+      tags:
+      - user
   /user/delete:
     post:
       consumes:
@@ -522,6 +608,40 @@ paths:
       security:
       - bearerToken: []
       summary: Delete a user
+      tags:
+      - user
+  /user/elevate:
+    get:
+      consumes:
+      - application/json
+      description: This is only usable for privileged users
+      parameters:
+      - description: The ID of the user
+        in: query
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.User'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ProceduralError'
+      security:
+      - bearerToken: []
+      summary: Toggle a users' admin status
       tags:
       - user
 securityDefinitions:
